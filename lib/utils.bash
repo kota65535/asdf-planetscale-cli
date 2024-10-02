@@ -2,7 +2,6 @@
 
 set -euo pipefail
 
-# TODO: Ensure this is the correct GitHub homepage where releases can be downloaded for planetscale-cli.
 GH_REPO="https://github.com/planetscale/cli"
 TOOL_NAME="planetscale-cli"
 TOOL_TEST="pscale --version"
@@ -31,8 +30,6 @@ list_github_tags() {
 }
 
 list_all_versions() {
-	# TODO: Adapt this. By default we simply list the tag names from GitHub releases.
-	# Change this function if planetscale-cli has other means of determining installable versions.
 	list_github_tags
 }
 
@@ -41,8 +38,9 @@ download_release() {
 	version="$1"
 	filename="$2"
 
-	# TODO: Adapt the release URL convention for planetscale-cli
-	url="$GH_REPO/archive/v${version}.tar.gz"
+	platform="$(get_platform)"
+	arch="$(get_arch)"
+	url="$GH_REPO/releases/download/v${version}/pscale_${version}_${platform}_${arch}.tar.gz"
 
 	echo "* Downloading $TOOL_NAME release $version..."
 	curl "${curl_opts[@]}" -o "$filename" -C - "$url" || fail "Could not download $url"
@@ -61,7 +59,6 @@ install_version() {
 		mkdir -p "$install_path"
 		cp -r "$ASDF_DOWNLOAD_PATH"/* "$install_path"
 
-		# TODO: Assert planetscale-cli executable exists.
 		local tool_cmd
 		tool_cmd="$(echo "$TOOL_TEST" | cut -d' ' -f1)"
 		test -x "$install_path/$tool_cmd" || fail "Expected $install_path/$tool_cmd to be executable."
@@ -71,4 +68,41 @@ install_version() {
 		rm -rf "$install_path"
 		fail "An error occurred while installing $TOOL_NAME $version."
 	)
+}
+
+get_platform() {
+	plat=$(uname | tr '[:upper:]' '[:lower:]')
+	case ${plat} in
+	darwin)
+		plat='macOS'
+		;;
+	linux)
+		plat='linux'
+		;;
+	windows)
+		plat='windows'
+		;;
+	esac
+
+	echo "${plat}"
+}
+
+get_arch() {
+	arch=$(uname -m | tr '[:upper:]' '[:lower:]')
+	case ${arch} in
+	aarch64 | aarch64* | armv8*)
+		arch='arm64'
+		;;
+	arm | armv6* | armv7*)
+		arch='arm'
+		;;
+	x86_64)
+		arch='amd64'
+		;;
+	i386 | i686)
+		arch='386'
+		;;
+	esac
+
+	echo "${arch}"
 }
