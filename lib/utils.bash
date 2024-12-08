@@ -40,7 +40,8 @@ download_release() {
 
 	platform="$(get_platform)"
 	arch="$(get_arch)"
-	url="$GH_REPO/releases/download/v${version}/pscale_${version}_${platform}_${arch}.tar.gz"
+	format="$(get_format "${platform}")"
+	url="$GH_REPO/releases/download/v${version}/pscale_${version}_${platform}_${arch}.${format}"
 
 	echo "* Downloading $TOOL_NAME release $version..."
 	curl "${curl_opts[@]}" -o "$filename" -C - "$url" || fail "Could not download $url"
@@ -68,6 +69,19 @@ install_version() {
 		rm -rf "$install_path"
 		fail "An error occurred while installing $TOOL_NAME $version."
 	)
+}
+
+get_format() {
+	plat=$1
+	case ${plat} in
+	windows)
+		format='zip'
+		;;
+	*)
+		format='tar.gz'
+		;;
+	esac
+	echo "${format}"
 }
 
 get_platform() {
